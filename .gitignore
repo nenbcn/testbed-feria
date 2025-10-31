@@ -1,0 +1,18 @@
+# PlatformIO
+.pio/
+.pioenvs/
+.piolibdeps/
+
+# VSCode
+.vscode/
+
+# Archivos temporales
+*.tmp
+*.bak
+.DS_Store
+
+# Logs
+*.log
+
+# Archivos de configuración local
+*.local

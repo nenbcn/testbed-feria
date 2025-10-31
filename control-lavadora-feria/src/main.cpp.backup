@@ -1,0 +1,194 @@
+/**
+ * DIAGNÓSTICO HARDWARE - Control de Lavadora
+ */
+
+#include <Arduino.h>
+#include <FastLED.h>
+
+// Definiciones de pines
+#define BTN_START_STOP     D2
+#define BTN_FLAT           D3
+#define BTN_SPIN_REDUCE    D4
+#define NEOPIXEL_PIN       D1
+#define VALVE_PIN          D5
+#define NUM_PIXELS         6
+
+// Array de LEDs NeoPixel
+CRGB leds[NUM_PIXELS];
+
+// Colores para tests
+const CRGB testColors[6] = {
+    CRGB::Red, CRGB::Green, CRGB::Blue, CRGB::Yellow, CRGB::Cyan, CRGB::Magenta
+};
+
+// Declaraciones de funciones
+void testSerial();
+void testButtons();
+void testAllLEDs();
+void testValve();
+void checkButtonsLive();
+
+void setup() {
+    Serial.begin(115200);
+    Serial.println("\n=== Pruebas Hardware - Control de Lavadora ===");
+    
+    // Configurar pines de entrada (botones) con pull-up interno
+    pinMode(BTN_START_STOP, INPUT_PULLUP);
+    pinMode(BTN_FLAT, INPUT_PULLUP);
+    pinMode(BTN_SPIN_REDUCE, INPUT_PULLUP);
+    
+    // Configurar pin de salida para válvula
+    pinMode(VALVE_PIN, OUTPUT);
+    digitalWrite(VALVE_PIN, LOW);
+    
+    // Inicializar FastLED (probar con RGB si GRB no funciona)
+    FastLED.addLeds<WS2812B, NEOPIXEL_PIN, RGB>(leds, NUM_PIXELS);
+    FastLED.setBrightness(80); // Aumentar brillo para mejor visibilidad
+    FastLED.clear(); // Limpiar todos los LEDs primero
+    FastLED.show();
+    delay(100); // Pequeña pausa para estabilizar
+    
+    // Encender todos los LEDs con sus colores únicos de forma secuencial
+    Serial.println("Encendiendo LEDs uno por uno...");
+    for(int i = 0; i < NUM_PIXELS; i++) {
+        leds[i] = ledColors[i];
+        FastLED.show();
+        Serial.print("LED ");
+        Serial.print(i);
+        Serial.println(" encendido");
+        delay(200); // Pausa entre cada LED para ver el efecto
+    }
+    
+    Serial.println("Sistema inicializado:");
+    Serial.println("- Pin D1: 6 LEDs NeoPixel (cada uno con color diferente)");
+    Serial.println("- Pin D2: Botón Inicio/Paro");
+    Serial.println("- Pin D3: Botón Flat");
+    Serial.println("- Pin D4: Botón Reducción Centrifugado");
+    Serial.println("- Pin D5: Válvula Digital");
+    Serial.println("\nColores de LEDs:");
+    Serial.println("  LED 0 (Inicio/Paro): Rojo");
+    Serial.println("  LED 1 (Flat): Verde");
+    Serial.println("  LED 2 (Reducción): Azul");
+    Serial.println("  LED 3 (Lavado): Amarillo");
+    Serial.println("  LED 4 (Aclarado): Cian");
+    Serial.println("  LED 5 (Centrifugado): Magenta");
+    Serial.println("\nPresiona los botones para probar...\n");
+}
+
+void loop() {
+    checkButtons();
+    delay(50); // Pequeña pausa para evitar lecturas excesivas
+}
+
+void checkButtons() {
+    // Leer estado actual de los botones
+    bool currentBtnStartStop = digitalRead(BTN_START_STOP);
+    bool currentBtnFlat = digitalRead(BTN_FLAT);
+    bool currentBtnSpinReduce = digitalRead(BTN_SPIN_REDUCE);
+    
+    // Verificar cambios con debounce simple
+    if (millis() - lastDebounceTime > debounceDelay) {
+        
+        // Botón Inicio/Paro (D2)
+        if (currentBtnStartStop != lastBtnStartStop) {
+            lastBtnStartStop = currentBtnStartStop;
+            lastDebounceTime = millis();
+            
+            if (currentBtnStartStop == LOW) { // Botón presionado (pull-up)
+                Serial.println("🔴 BOTÓN PRESIONADO: Inicio/Paro (D2)");
+                // Parpadear LED correspondiente
+                blinkLED(0, CRGB::White, 3);
+                // Ejecutar test de LEDs
+                testAllLEDs();
+            }
+        }
+        
+        // Botón Flat (D3)
+        if (currentBtnFlat != lastBtnFlat) {
+            lastBtnFlat = currentBtnFlat;
+            lastDebounceTime = millis();
+            
+            if (currentBtnFlat == LOW) { // Botón presionado
+                Serial.println("🟢 BOTÓN PRESIONADO: Flat (D3)");
+                // Parpadear LED correspondiente
+                blinkLED(1, CRGB::White, 3);
+            }
+        }
+        
+        // Botón Reducción Centrifugado (D4)
+        if (currentBtnSpinReduce != lastBtnSpinReduce) {
+            lastBtnSpinReduce = currentBtnSpinReduce;
+            lastDebounceTime = millis();
+            
+            if (currentBtnSpinReduce == LOW) { // Botón presionado
+                Serial.println("🔵 BOTÓN PRESIONADO: Reducción Centrifugado (D4)");
+                // Parpadear LED correspondiente
+                blinkLED(2, CRGB::White, 3);
+                
+                // Activar/desactivar válvula como ejemplo
+                static bool valveState = false;
+                valveState = !valveState;
+                digitalWrite(VALVE_PIN, valveState);
+                Serial.println("💧 Válvula: " + String(valveState ? "ACTIVADA" : "DESACTIVADA"));
+            }
+        }
+    }
+}
+
+void blinkLED(int ledIndex, CRGB color, int times) {
+    CRGB originalColor = leds[ledIndex];
+    
+    for(int i = 0; i < times; i++) {
+        leds[ledIndex] = color;
+        FastLED.show();
+        delay(150);
+        
+        leds[ledIndex] = CRGB::Black;
+        FastLED.show();
+        delay(150);
+    }
+    
+    // Restaurar color original
+    leds[ledIndex] = originalColor;
+    FastLED.show();
+}
+
+void testAllLEDs() {
+    Serial.println("\n=== TEST DE LEDs ===");
+    
+    // Apagar todos los LEDs
+    FastLED.clear();
+    FastLED.show();
+    delay(500);
+    
+    // Encender cada LED individualmente
+    for(int i = 0; i < NUM_PIXELS; i++) {
+        Serial.print("Probando LED ");
+        Serial.print(i);
+        Serial.print(" - Color: ");
+        
+        switch(i) {
+            case 0: Serial.println("Rojo"); break;
+            case 1: Serial.println("Verde"); break;
+            case 2: Serial.println("Azul"); break;
+            case 3: Serial.println("Amarillo"); break;
+            case 4: Serial.println("Cian"); break;
+            case 5: Serial.println("Magenta"); break;
+        }
+        
+        // Encender solo este LED
+        FastLED.clear();
+        leds[i] = ledColors[i];
+        FastLED.show();
+        delay(1000);
+    }
+    
+    // Encender todos a la vez
+    Serial.println("Encendiendo todos los LEDs...");
+    for(int i = 0; i < NUM_PIXELS; i++) {
+        leds[i] = ledColors[i];
+    }
+    FastLED.show();
+    
+    Serial.println("Test completado. Todos los LEDs deberían estar encendidos.\n");
+}
