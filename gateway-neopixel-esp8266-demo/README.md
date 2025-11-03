@@ -1,67 +1,219 @@
-# Iluminación Logo Gateway - ESP8266
+# Control de LEDs NeoPixel con ESP8266
 
-Este proyecto controla la iluminación del logo corporativo en la caja del gateway para demostraciones en feria. El ESP8266 se conecta a 3 tiras de LEDs NeoPixel que iluminan el logo con una secuencia visual automática.
+Este proyecto permite controlar tiras de LEDs NeoPixel con un ESP8266 NodeMCU usando **software universal** que funciona con **dos configuraciones de hardware diferentes**:
+- **3 pines separados** (D1, D2, D3) con 10 LEDs cada uno
+- **1 pin único** (D1) con 30 LEDs en serie
 
-## 🎯 Función Específica
+✨ **El mismo código funciona en ambas configuraciones** - solo cambia el cableado físico.
 
-- **Propósito**: Iluminar el logo del gateway en el stand de feria
-- **Funcionalidad**: Solo decorativa/visual - sin funciones adicionales  
-- **Operación**: Secuencia automática continua con colores corporativos
-- **Instalación**: Dentro de la caja del gateway para efecto visual
-
-## 🎨 Secuencia de Iluminación
-
-El sistema ejecuta una secuencia predefinida que:
-1. **Presenta cada color** en todo el logo (turquesa → azul marino → naranja)
-2. **Simula "bajada"** del logo de arriba hacia abajo
-3. **Combina colores** para formar el logo completo
-4. **Efectos de flash** finales para llamar la atención
-5. **Se repite continuamente** para mantener el impacto visual
+Incluye múltiples efectos de iluminación y control por puerto serie.
 
 ## 🔧 Hardware Requerido
 
-- **ESP8266 NodeMCU v2** (dentro de la caja del gateway)
-- **3 tiras de LEDs NeoPixel** (10 LEDs por tira)
-- **Fuente de alimentación 5V** para los LEDs
-- **Conexiones**: D1, D2, D3 para las 3 secciones del logo
+- **ESP8266 NodeMCU v1.0**
+- **Tiras de LEDs NeoPixel (WS2812B)** - 3 unidades
+- **Fuente de alimentación externa** (recomendada para múltiples LEDs)
+- **Resistencias de 470Ω** (opcional, para protección de datos)
+- **Cables de conexión**
 
-## �� Conexiones del Logo
+## 📐 Configuraciones de Hardware
 
-```
-ESP8266 Pin D1 (GPIO5)  →  LEDs sección SUPERIOR del logo (Turquesa)
-ESP8266 Pin D2 (GPIO4)  →  LEDs sección CENTRAL del logo (Azul Marino)  
-ESP8266 Pin D3 (GPIO0)  →  LEDs sección INFERIOR del logo (Naranja)
+### 🔧 Opción 1: 3 Pines Separados  
+| Pin ESP8266 | Conexión | Descripción |
+|-------------|----------|-------------|
+| D1 (GPIO5)  | Tira 1 | 10 LEDs NeoPixel |
+| D2 (GPIO4)  | Tira 2 | 10 LEDs NeoPixel |
+| D3 (GPIO0)  | Tira 3 | 10 LEDs NeoPixel |
+| 5V          | VCC | Alimentación común |
+| GND         | GND | Tierra común |
 
-Alimentación:
-5V externa  →  VCC de todas las tiras NeoPixel
-GND común   →  GND ESP8266 + GND LEDs
-```
+### 🔧 Opción 2: Pin Único
+| Pin ESP8266 | Conexión | Descripción |
+|-------------|----------|-------------|
+| D1 (GPIO5)  | Tira continua | 30 LEDs NeoPixel en serie |
+| 5V          | VCC | Alimentación |
+| GND         | GND | Tierra común |
 
-## 🚀 Instalación
+> ✨ **Software Universal**: El mismo código funciona en ambas configuraciones automáticamente
+> 
+> 📖 **Ver documentación completa**: [Configuración de Hardware](docs/configuracion-hardware.md)
+
+### ⚠️ Notas Importantes sobre Alimentación
+
+- **Para 1-5 LEDs por tira**: Puedes alimentar desde el pin 3V3 del ESP8266
+- **Para más de 5 LEDs por tira**: Usa una fuente externa de 5V
+- **Cálculo de corriente**: Cada LED consume ~60mA a máximo brillo
+- **Ejemplo**: 10 LEDs x 3 tiras x 60mA = 1.8A mínimo requerido
+
+## 🚀 Instalación y Configuración
+
+### 1. Configuración del Entorno
 
 ```bash
-# Clonar y compilar
-cd gateway-neopixel-esp8266-demo
+# Instalar PlatformIO (si no está instalado)
+pip install platformio
+
+# Clonar o descargar este proyecto
+cd control-neopixel-esp8266
+
+# Compilar el proyecto
 pio run
 
 # Subir al ESP8266
 pio run --target upload
+
+# Monitorear puerto serie
+pio device monitor
 ```
 
-## ⚡ Funcionamiento
+### 2. Cambiar Configuración de Hardware
 
-1. **Encendido automático**: El sistema inicia al alimentar el gateway
-2. **Secuencia continua**: No requiere intervención manual
-3. **Colores corporativos**: Usa los colores oficiales de la marca
-4. **Efecto visual**: Llama la atención en el stand de feria
+**Para cambiar entre los 2 modos**, editar `include/config.h`:
 
-## 🎪 Para la Feria
+```cpp
+// Para usar 3 pines separados (D1, D2, D3)
+#define USE_SEPARATE_PINS     true
 
-- ✅ **Plug & Play**: Solo conectar y encender
-- ✅ **Funcionamiento continuo**: Sin mantenimiento durante el evento
-- ✅ **Impacto visual**: Logo iluminado llama la atención
-- ✅ **Integrado**: Oculto dentro de la caja del gateway
+// Para usar 1 pin único (D1) con 30 LEDs en serie  
+#define USE_SEPARATE_PINS     false
+```
+
+### 3. Personalización Adicional
+
+Edita otras configuraciones en `include/config.h`:
+
+```cpp
+#define NUM_LEDS_PER_STRIP    10    // LEDs por sección
+#define BRIGHTNESS            50    // Brillo inicial (0-255)
+#define MAX_BRIGHTNESS        150   // Brillo máximo
+```
+
+## 🎨 Efectos Disponibles
+
+El sistema incluye 6 efectos diferentes que rotan automáticamente cada 10 segundos:
+
+| Efecto | Descripción |
+|--------|-------------|
+| **0** | Colores sólidos rotando |
+| **1** | Arcoíris deslizante |
+| **2** | Respiración con colores diferentes |
+| **3** | Luz corriendo con cola |
+| **4** | Destellos aleatorios |
+| **5** | Efecto onda |
+
+## 📟 Comandos por Puerto Serie
+
+Puedes controlar el sistema enviando comandos por el puerto serie a 115200 baudios:
+
+```
+effect0    - Cambiar a efecto 0 (colores sólidos)
+effect1    - Cambiar a efecto 1 (arcoíris)
+effect2    - Cambiar a efecto 2 (respiración)
+effect3    - Cambiar a efecto 3 (luz corriendo)
+effect4    - Cambiar a efecto 4 (destellos)
+effect5    - Cambiar a efecto 5 (onda)
+status     - Mostrar estado actual del sistema
+clear      - Apagar todos los LEDs
+```
+
+## 🛠️ Personalización
+
+### Cambiar Colores
+
+Modifica las constantes de color en el código:
+
+```cpp
+const CRGB COLOR_PERSONALIZADO = CRGB(255, 128, 64); // RGB personalizado
+```
+
+### Agregar Nuevos Efectos
+
+1. Crea una nueva función de efecto:
+```cpp
+void miNuevoEfecto(CRGB* strip) {
+    // Tu código aquí
+}
+```
+
+2. Agrégala al switch en `executeEffect()`:
+```cpp
+case 6: // Nuevo efecto
+    miNuevoEfecto(leds_d1);
+    miNuevoEfecto(leds_d2);
+    miNuevoEfecto(leds_d3);
+    break;
+```
+
+3. Actualiza `NUM_EFFECTS` en las variables globales.
+
+### Velocidad de Animación
+
+Cambia el intervalo de actualización:
+
+```cpp
+const long interval = 50;  // Más rápido (50ms)
+const long interval = 200; // Más lento (200ms)
+```
+
+## 📊 Monitoreo y Debug
+
+El sistema proporciona información detallada por puerto serie:
+
+```
+=== Control de LEDs NeoPixel ESP8266 ===
+Inicializando sistema...
+LEDs inicializados en pines D1, D2 y D3
+Número de LEDs por tira: 10
+Brillo configurado: 50
+Sistema inicializado correctamente
+```
+
+### Resolución de Problemas
+
+| Problema | Solución |
+|----------|----------|
+| LEDs no encienden | Verificar conexiones y alimentación |
+| Colores incorrectos | Cambiar orden de colores (GRB vs RGB) |
+| Parpadeo | Usar fuente de alimentación externa |
+| No responde a comandos | Verificar velocidad de puerto serie (115200) |
+
+## 📚 Librerías Utilizadas
+
+- **FastLED 3.6.0+**: Control avanzado de LEDs programables
+- **Arduino Core for ESP8266**: Framework base
+
+## 🔄 Futuras Mejoras
+
+- [ ] Control por WiFi y aplicación móvil
+- [ ] Sincronización con música
+- [ ] Sensor de sonido para efectos reactivos
+- [ ] Configuración por web interface
+- [ ] Almacenamiento de configuraciones en EEPROM
+- [ ] Control por MQTT
+- [ ] Integración con Home Assistant
+
+## 📝 Licencia
+
+Este proyecto está bajo la Licencia MIT. Consulta el archivo `LICENSE` para más detalles.
+
+## 🤝 Contribuciones
+
+Las contribuciones son bienvenidas. Por favor:
+
+1. Fork el proyecto
+2. Crea una rama para tu feature (`git checkout -b feature/NuevoEfecto`)
+3. Commit tus cambios (`git commit -am 'Agregar nuevo efecto'`)
+4. Push a la rama (`git push origin feature/NuevoEfecto`)
+5. Abre un Pull Request
+
+## 📞 Soporte
+
+Si tienes problemas o preguntas:
+
+- Abre un issue en GitHub
+- Revisa la documentación de FastLED
+- Consulta los foros de ESP8266
 
 ---
 
-**Desarrollado exclusivamente para iluminación decorativa del logo en ferias** 🎪✨
+**¡Disfruta creando efectos increíbles con tus LEDs NeoPixel!** ✨
