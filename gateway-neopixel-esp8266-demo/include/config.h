@@ -7,9 +7,17 @@
 #define CONFIG_H
 
 // === CONFIGURACIÓN DE HARDWARE ===
-#define NUM_LEDS_PER_STRIP    10    // Número de LEDs por tira
-#define BRIGHTNESS            50    // Brillo inicial (0-255)
-#define MAX_BRIGHTNESS        150   // Brillo máximo permitido
+// El mismo software funciona con dos configuraciones de hardware:
+// - Opción 1: 3 pines separados (D1, D2, D3) con 10 LEDs cada uno
+// - Opción 2: 1 pin único (D1) con 30 LEDs en serie
+// Solo cambia el cableado físico, el software es idéntico
+
+#define NUM_LEDS_PER_STRIP    1     // Número de LEDs por sección lógica (1 LED por sección)
+#define BRIGHTNESS            255   // Brillo al MÁXIMO (0-255)
+#define MAX_BRIGHTNESS        255   // Brillo máximo permitido
+
+// === SOFTWARE UNIVERSAL ===
+// No hay configuraciones que cambiar - el mismo código funciona siempre
 
 // === CONFIGURACIÓN DE EFECTOS ===
 #define ANIMATION_SPEED       100   // Velocidad de animación (ms)
